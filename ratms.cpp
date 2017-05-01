@@ -8,23 +8,45 @@
 #include "em_cmu.h"
 #include "em_gpio.h"
 #include "em_usart.h"
+#include "math.h"
 
 USART_TypeDef *usartAcc = USART0;
-uint8_t hewio;
+int16_t axisZ;
+int whoami;
+float deg;
+float zGravity;
+const float toDeg = (180/3.1415);
+
+void blinky(void const* arg) {
+	 while (1) {
+		 GPIO_PinOutSet(gpioPortC, 0);
+		 osDelay(3000);
+		 GPIO_PinOutClear(gpioPortC, 0);
+		 osDelay(10);
+		 GPIO_PinOutSet(gpioPortC, 0);
+		 osDelay(130);
+		 GPIO_PinOutClear(gpioPortC, 0);
+		 osDelay(20);
+	 }
+}
+osThreadDef(blinky, osPriorityNormal, 1, 0);
 
 uint8_t accRead(uint8_t regRead) {
-	uint8_t tem = 0;
+	uint8_t temp = 0;
 	USART_Tx(usartAcc, (regRead | 0x80));
 	USART_Tx(usartAcc, 0x00);
-	tem = USART_Rx(usartAcc);
-	return tem;
+	temp = USART_Rx(usartAcc);
+	osDelay(1);
+	return temp;
 }
 
-void accWrite(uint8_t regWrite, uint8_t regValue) {
-	uint8_t tem = 0;
-	USART_Tx(usartAcc, (regWrite | 0x00));
+uint8_t accWrite(uint8_t regWrite, uint8_t regValue) {
+	uint8_t temp = 0;
+	USART_Tx(usartAcc, regWrite);
 	USART_Tx(usartAcc, regValue);
-	tem = USART_Rx(usartAcc);
+	temp = USART_Rx(usartAcc);
+	osDelay(1);
+	return temp;
 }
 
 void spiInitialize(void) {
@@ -71,51 +93,45 @@ void Initialize(void) {
 	 spiInitialize();
 }
 
-void blinky(void const* arg) {
-	 while (1) {
-		 GPIO_PinOutSet(gpioPortC, 0);
-		 osDelay(1000);
-		 GPIO_PinOutClear(gpioPortC, 0);
-		 osDelay(100);
-		 GPIO_PinOutSet(gpioPortC, 0);
-		 osDelay(100);
-		 GPIO_PinOutClear(gpioPortC, 0);
-		 osDelay(100);
-	 }
-}
-osThreadDef(blinky, osPriorityNormal, 1, 0);
+//void outtog(void const* arg) {
+//	 while (1) {
+//		 GPIO_PinOutSet(gpioPortA, 8);
+//		 GPIO_PinOutClear(gpioPortA, 9);
+//		 osDelay(3000);
+//		 GPIO_PinOutClear(gpioPortA, 8);
+//		 GPIO_PinOutSet(gpioPortA, 9);
+//		 osDelay(3000);
+//	 }
+//}
+//osThreadDef(outtog, osPriorityNormal, 1, 0);
 
-void outtog(void const* arg) {
-	 while (1) {
-		 GPIO_PinOutSet(gpioPortA, 8);
-		 GPIO_PinOutClear(gpioPortA, 9);
-		 osDelay(3000);
-		 GPIO_PinOutClear(gpioPortA, 8);
-		 GPIO_PinOutSet(gpioPortA, 9);
-		 osDelay(3000);
-	 }
-}
-osThreadDef(outtog, osPriorityNormal, 1, 0);
-
-void runner(void const * params) {
+void runner(void const * params) {	
+	accWrite(0x20, 0x7C); //enable bdu, zen, data rate 400Hz
+	accWrite(0x24, 0x80); //anti-aliasing filter 400Hz
 	
-	accWrite(0x20, 0x17);
+	int8_t axisZH;
+	uint8_t axisZL;
+	
 	while (1) {
-		hewio = accRead(0x2D);
+		whoami = accRead(0x0F);
+		axisZH = accRead(0x2D);
+		axisZL = accRead(0x2C);
+		axisZ = axisZH  << 8 | axisZL;
+		zGravity = ((axisZ*2.0)/32768.0);
 		osDelay(100);
 	}
 }
 osThreadDef(runner, osPriorityNormal, 1, 0);
- 
+
 int main (void) {
   SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock/1000); // 1 milisecond SysTick
 	
 	osKernelInitialize();
 	Initialize();
-	
+		
 	osThreadCreate(osThread(blinky), NULL);
-	osThreadCreate(osThread(outtog), NULL);
+//	osThreadCreate(osThread(outtog), NULL);
 	osThreadCreate(osThread(runner), NULL);
 	
 	return 0;
