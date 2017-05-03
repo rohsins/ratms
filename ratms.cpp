@@ -49,6 +49,14 @@ uint8_t accWrite(uint8_t regWrite, uint8_t regValue) {
 	return temp;
 }
 
+void GPIO_ODD_IRQHandler(void) {
+	GPIO_IntClear(GPIO_IntGet());
+}
+
+void GPIO_EVEN_IRQHandler(void) {
+  GPIO_IntClear(GPIO_IntGet());
+}
+
 void spiInitialize(void) {
 	USART_InitSync_TypeDef usartInitTypeDefAcc = USART_INITSYNC_DEFAULT;
 	
@@ -57,7 +65,7 @@ void spiInitialize(void) {
 	
 	usartInitTypeDefAcc.baudrate = 100000;
 	usartInitTypeDefAcc.databits = usartDatabits8;
-	
+	 
 	USART_Enable_TypeDef usartEnableTypeDef = usartEnable;
 		
 	USART_InitSync(usartAcc, &usartInitTypeDefAcc);
@@ -91,6 +99,18 @@ void Initialize(void) {
 	 GPIO_PinModeSet(gpioPortC, 0, gpioModePushPull, 0); 
 	
 	 spiInitialize();
+	
+	//gpio interrupts
+	GPIO_PinModeSet(gpioPortD, 6, gpioModeInput, 0);
+	GPIO_PinModeSet(gpioPortD, 7, gpioModeInput, 0);
+	
+	GPIO_IntConfig(gpioPortD, 6, false, true, true);
+	GPIO_IntConfig(gpioPortD, 7, false, true, true);
+	
+	NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
+	NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
+	NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+	NVIC_EnableIRQ(GPIO_ODD_IRQn);
 }
 
 //void outtog(void const* arg) {
@@ -108,6 +128,7 @@ void Initialize(void) {
 void runner(void const * params) {	
 	accWrite(0x20, 0x7C); //enable bdu, zen, data rate 400Hz
 	accWrite(0x24, 0x80); //anti-aliasing filter 400Hz
+	accWrite(0x23, 0x88); //enable dataready interrupt
 	
 	int8_t axisZH;
 	uint8_t axisZL;
@@ -123,7 +144,7 @@ void runner(void const * params) {
 }
 osThreadDef(runner, osPriorityNormal, 1, 0);
 
-int main (void) {
+ int main (void) {
   SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock/1000); // 1 milisecond SysTick
 	
