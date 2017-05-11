@@ -13,19 +13,29 @@
 USART_TypeDef *usartAcc = USART0;
 
 uint8_t whoAmI;
-uint8_t axisXL;
+//uint8_t axisXL;
 int8_t axisXH;
 int16_t axisX;
-uint8_t axisYL;
+//uint8_t axisYL;
 int8_t axisYH;
 int16_t axisY;
-uint8_t axisZL;
+//uint8_t axisZL;
 int8_t axisZH;
 int16_t axisZ;
+
+float xAxisValue;
+float yAxisValue;
+float zAxisValue;
 
 float xGravity;
 float yGravity;
 float zGravity;
+
+float xOffset = -1.5;
+float yOffset = 1.5;
+float zOffset = 0.5;
+
+float speed;
 
 enum movement {
 	none = 0,
@@ -62,16 +72,20 @@ void accWrite(uint8_t regWrite, uint8_t regValue) {
 }
 
 void readAxisData() {
-	axisXL = accRead(0x28);
+	//axisXL = accRead(0x28);
 	axisXH = accRead(0x29);
-	axisYL = accRead(0x2A);
+	//axisYL = accRead(0x2A);
 	axisYH = accRead(0x2B);
-	axisZL = accRead(0x2C);
+	//axisZL = accRead(0x2C);
 	axisZH = accRead(0x2D);
 	
-	axisX = axisXH << 8 | axisXL;
-	axisY = axisYH << 8 | axisYL;
-	axisZ = axisZH << 8 | axisZL;
+	xAxisValue = axisXH - xOffset; // << 8 | axisXL;
+	yAxisValue = axisYH - yOffset; // << 8 | axisYL;
+	zAxisValue = axisZH - zOffset; // << 8 | axisZL;
+	
+	xGravity = (xAxisValue * 9.80665)/65;
+	yGravity = (yAxisValue * 9.80665)/66;
+	zGravity = (zAxisValue * 9.80665)/64;
 }
 
 void accConfig() {
@@ -160,33 +174,27 @@ void blinky(void const* arg) {
 }
 osThreadDef(blinky, osPriorityBelowNormal, 1, 0);
 
-void runner(void const * params) {	
-	while (1) {
-		whoAmI = accRead(0x0F);
-		if (whoAmI == 0x3F) readAxisData();
-		osDelay(100);
-	}
-}
-osThreadDef(runner, osPriorityNormal, 1, 0);
-
 void computeEngine(void const * params) {
 	while (1) {
-		if (axisX > 4000) direction = forward;
-		else if (axisX < -6000) direction = backward;
-		else if (axisY > 6000) direction = left;
-		else if (axisY < -6000) direction = right;
-		else direction = none;
-		
-		xGravity = (axisX * 9.8)/16384;
-		yGravity = (axisY * 9.8)/16384;
-		zGravity = (axisZ * 9.8)/16384;
-		
-		osDelay(200);
+		//whoAmI = accRead(0x0F);
+		//if (whoAmI == 0x3F) {
+			readAxisData();
+			if ((xGravity > 2.5)) direction = forward;
+			else if (xGravity < -2.5) direction = backward;
+			else if (yGravity > 3.4) direction = left;
+			else if (yGravity < -3.4) direction = right;
+			else direction = none;
+			
+	//		xGravity = (axisX * 9.8)/16384;
+	//		yGravity = (axisY * 9.8)/16384;
+	//		zGravity = (axisZ * 9.8)/16384;
+		//}
+		osDelay(100);
 	}
 }
 osThreadDef(computeEngine, osPriorityNormal, 1, 0);
 
- int main (void) {
+    int main (void) {
 	 
 	SysTick_Config(SystemCoreClock/1000); // 1 milisecond SysTick
 	
@@ -196,8 +204,6 @@ osThreadDef(computeEngine, osPriorityNormal, 1, 0);
 	accConfig();
 		
 	osThreadCreate(osThread(blinky), NULL);
-//	osThreadCreate(osThread(outtog), NULL);
-	osThreadCreate(osThread(runner), NULL);
 	osThreadCreate(osThread(computeEngine), NULL);
 	
 	return 0;
