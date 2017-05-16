@@ -38,11 +38,15 @@ float zOffset = 0.5;
 float speed;
 
 enum movement {
-	none = 0,
+	stall = 0,
 	left,
 	backward,
 	right,
-	forward
+	forward,
+	forwardleft,
+	backwardleft,
+	backwardright,
+	forwardright
 };
 
 movement direction;
@@ -179,11 +183,15 @@ void computeEngine(void const * params) {
 		//whoAmI = accRead(0x0F);
 		//if (whoAmI == 0x3F) {
 			readAxisData();
-			if ((xGravity > 2.5)) direction = forward;
-			else if (xGravity < -2.5) direction = backward;
+			if (xGravity > 1.3 && yGravity > 2.4) direction = forwardleft;
+			else if (xGravity < -2.3 && yGravity > 2.4) direction = backwardleft;
+			else if (xGravity < -2.3 && yGravity < -2.4) direction = backwardright;
+			else if (xGravity > 1.3 && yGravity < -2.4) direction = forwardright;
+			else if (xGravity > 1.3) direction = forward;
+			else if (xGravity < -2.3) direction = backward;
 			else if (yGravity > 3.4) direction = left;
 			else if (yGravity < -3.4) direction = right;
-			else direction = none;
+			else direction = stall;
 			
 	//		xGravity = (axisX * 9.8)/16384;
 	//		yGravity = (axisY * 9.8)/16384;
