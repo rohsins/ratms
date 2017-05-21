@@ -13,27 +13,29 @@
 USART_TypeDef *usartAcc = USART0;
 
 uint8_t whoAmI;
-//uint8_t axisXL;
+uint8_t axisXL;
 int8_t axisXH;
 int16_t axisX;
-//uint8_t axisYL;
+uint8_t axisYL;
 int8_t axisYH;
 int16_t axisY;
-//uint8_t axisZL;
+uint8_t axisZL;
 int8_t axisZH;
 int16_t axisZ;
 
-float xAxisValue;
-float yAxisValue;
-float zAxisValue;
+const int LPFTap = 32;
 
-float xGravity;
-float yGravity;
-float zGravity;
+//float xAxisValue;
+//float yAxisValue;
+//float zAxisValue;
 
-float xOffset = -1.5;
-float yOffset = 1.5;
-float zOffset = 0.5;
+//float xGravity;
+//float yGravity;
+//float zGravity;
+
+//float xOffset = -1.5;
+//float yOffset = 1.5;
+//float zOffset = 0.5;
 
 float speed;
 
@@ -76,20 +78,40 @@ void accWrite(uint8_t regWrite, uint8_t regValue) {
 }
 
 void readAxisData() {
-	//axisXL = accRead(0x28);
+	//static int i;
+	
+	axisXL = accRead(0x28);
 	axisXH = accRead(0x29);
-	//axisYL = accRead(0x2A);
+	axisYL = accRead(0x2A);
 	axisYH = accRead(0x2B);
-	//axisZL = accRead(0x2C);
+	axisZL = accRead(0x2C);
 	axisZH = accRead(0x2D);
 	
-	xAxisValue = axisXH - xOffset; // << 8 | axisXL;
-	yAxisValue = axisYH - yOffset; // << 8 | axisYL;
-	zAxisValue = axisZH - zOffset; // << 8 | axisZL;
+	//axisX = axisXH << 8 | axisXL;
+	//axisY = axisYH << 8 | axisYL;
+	//axisZ = axisZH << 8 | axisZL;
 	
-	xGravity = (xAxisValue * 9.80665)/65;
-	yGravity = (yAxisValue * 9.80665)/66;
-	zGravity = (zAxisValue * 9.80665)/64;
+	axisX = (((axisXH << 8 | axisXL) + ((LPFTap - 1) * axisX)) >> 5);
+	axisY = (((axisYH << 8 | axisYL) + ((LPFTap - 1) * axisY)) >> 5);
+	axisZ = (((axisZH << 8 | axisZL) + ((LPFTap - 1) * axisZ)) >> 5);
+	
+	//zFilterValue[i] = axisZ;
+	//zFilteredValue = (zFilterValue[0] + zFilterValue[1] + zFilterValue[2] + zFilterValue[3])/4;
+	
+	//zFilteredValue = ((axisZ + ((LPFTap - 1) * zFilteredValue)) >> 4);
+	
+	//zFilteredValue += zFilterValue[i];
+	//zFilteredValue = (zFilteredValue/LPFTap);
+	//i++;
+	//i = i%LPFTap;
+	
+//	xAxisValue = axisXH - xOffset; // << 8 | axisXL;
+//	yAxisValue = axisYH - yOffset; // << 8 | axisYL;
+//	zAxisValue = axisZH - zOffset; // << 8 | axisZL;
+//	
+//	xGravity = (xAxisValue * 9.80665)/65;
+//	yGravity = (yAxisValue * 9.80665)/66;
+//	zGravity = (zAxisValue * 9.80665)/64;
 }
 
 void accConfig() {
@@ -183,21 +205,21 @@ void computeEngine(void const * params) {
 		//whoAmI = accRead(0x0F);
 		//if (whoAmI == 0x3F) {
 			readAxisData();
-			if (xGravity > 1.3 && yGravity > 2.4) direction = forwardleft;
-			else if (xGravity < -2.3 && yGravity > 2.4) direction = backwardleft;
-			else if (xGravity < -2.3 && yGravity < -2.4) direction = backwardright;
-			else if (xGravity > 1.3 && yGravity < -2.4) direction = forwardright;
-			else if (xGravity > 1.3) direction = forward;
-			else if (xGravity < -2.3) direction = backward;
-			else if (yGravity > 3.4) direction = left;
-			else if (yGravity < -3.4) direction = right;
-			else direction = stall;
+//			if (xGravity > 1.3 && yGravity > 2.4) direction = forwardleft;
+//			else if (xGravity < -2.3 && yGravity > 2.4) direction = backwardleft;
+//			else if (xGravity < -2.3 && yGravity < -2.4) direction = backwardright;
+//			else if (xGravity > 1.3 && yGravity < -2.4) direction = forwardright;
+//			else if (xGravity > 1.3) direction = forward;
+//			else if (xGravity < -2.3) direction = backward;
+//			else if (yGravity > 3.4) direction = left;
+//			else if (yGravity < -3.4) direction = right;
+//			else direction = stall;
 			
 	//		xGravity = (axisX * 9.8)/16384;
 	//		yGravity = (axisY * 9.8)/16384;
 	//		zGravity = (axisZ * 9.8)/16384;
 		//}
-		osDelay(100);
+		//osDelay(100);
 	}
 }
 osThreadDef(computeEngine, osPriorityNormal, 1, 0);
