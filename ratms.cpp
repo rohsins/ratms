@@ -13,31 +13,19 @@
 USART_TypeDef *usartAcc = USART0;
 
 uint8_t whoAmI;
-uint8_t axisXL;
+
 int8_t axisXH;
-int16_t axisX;
-uint8_t axisYL;
+float axisX;
 int8_t axisYH;
-int16_t axisY;
-uint8_t axisZL;
+float axisY;
 int8_t axisZH;
-int16_t axisZ;
+float axisZ;
 
-const int LPFTap = 32;
+const int LPFTap = 16;
 
-//float xAxisValue;
-//float yAxisValue;
-//float zAxisValue;
 
-//float xGravity;
-//float yGravity;
-//float zGravity;
-
-//float xOffset = -1.5;
-//float yOffset = 1.5;
-//float zOffset = 0.5;
-
-float speed;
+float speedL;
+float speedR;
 
 enum movement {
 	stall = 0,
@@ -77,41 +65,24 @@ void accWrite(uint8_t regWrite, uint8_t regValue) {
 	osDelay(1);
 }
 
+void actuatorSpeed(float axisXT, float axisYT) {
+	speedL = axisXT - axisYT;
+	speedR = axisXT + axisYT;
+}
+
+void actuatorSpeed2(float axisXT, float axisYT) {
+	speedL = axisYT;
+	speedR = axisYT;
+}
+
 void readAxisData() {
-	//static int i;
-	
-	axisXL = accRead(0x28);
 	axisXH = accRead(0x29);
-	axisYL = accRead(0x2A);
 	axisYH = accRead(0x2B);
-	axisZL = accRead(0x2C);
 	axisZH = accRead(0x2D);
 	
-	//axisX = axisXH << 8 | axisXL;
-	//axisY = axisYH << 8 | axisYL;
-	//axisZ = axisZH << 8 | axisZL;
-	
-	axisX = (((axisXH << 8 | axisXL) + ((LPFTap - 1) * axisX)) >> 5);
-	axisY = (((axisYH << 8 | axisYL) + ((LPFTap - 1) * axisY)) >> 5);
-	axisZ = (((axisZH << 8 | axisZL) + ((LPFTap - 1) * axisZ)) >> 5);
-	
-	//zFilterValue[i] = axisZ;
-	//zFilteredValue = (zFilterValue[0] + zFilterValue[1] + zFilterValue[2] + zFilterValue[3])/4;
-	
-	//zFilteredValue = ((axisZ + ((LPFTap - 1) * zFilteredValue)) >> 4);
-	
-	//zFilteredValue += zFilterValue[i];
-	//zFilteredValue = (zFilteredValue/LPFTap);
-	//i++;
-	//i = i%LPFTap;
-	
-//	xAxisValue = axisXH - xOffset; // << 8 | axisXL;
-//	yAxisValue = axisYH - yOffset; // << 8 | axisYL;
-//	zAxisValue = axisZH - zOffset; // << 8 | axisZL;
-//	
-//	xGravity = (xAxisValue * 9.80665)/65;
-//	yGravity = (yAxisValue * 9.80665)/66;
-//	zGravity = (zAxisValue * 9.80665)/64;
+	axisX = ((axisXH + ((LPFTap - 1) * axisX))/LPFTap);
+	axisY = ((axisYH + ((LPFTap - 1) * axisY))/LPFTap);
+	axisZ = ((axisZH + ((LPFTap - 1) * axisZ))/LPFTap);
 }
 
 void accConfig() {
@@ -136,7 +107,7 @@ void spiInitialize(void) {
 	usartInitTypeDefAcc.clockMode = usartClockMode3;
 	usartInitTypeDefAcc.msbf = true;
 	
-	usartInitTypeDefAcc.baudrate = 800000;
+	usartInitTypeDefAcc.baudrate = 1000000;
 	usartInitTypeDefAcc.databits = usartDatabits8;
 	 
 	USART_Enable_TypeDef usartEnableTypeDef = usartEnable;
@@ -205,26 +176,39 @@ void computeEngine(void const * params) {
 		//whoAmI = accRead(0x0F);
 		//if (whoAmI == 0x3F) {
 			readAxisData();
-//			if (xGravity > 1.3 && yGravity > 2.4) direction = forwardleft;
-//			else if (xGravity < -2.3 && yGravity > 2.4) direction = backwardleft;
-//			else if (xGravity < -2.3 && yGravity < -2.4) direction = backwardright;
-//			else if (xGravity > 1.3 && yGravity < -2.4) direction = forwardright;
-//			else if (xGravity > 1.3) direction = forward;
-//			else if (xGravity < -2.3) direction = backward;
-//			else if (yGravity > 3.4) direction = left;
-//			else if (yGravity < -3.4) direction = right;
-//			else direction = stall;
-			
-	//		xGravity = (axisX * 9.8)/16384;
-	//		yGravity = (axisY * 9.8)/16384;
-	//		zGravity = (axisZ * 9.8)/16384;
-		//}
-		//osDelay(100);
+			if (axisX > 15 && axisY > 15) {
+				direction = forwardleft;
+				actuatorSpeed(axisX, axisY - 15);
+			} else if (axisX < -15 && axisY > 15) {
+				direction = backwardleft;
+				actuatorSpeed(-axisX, axisY - 15);
+			} else if (axisX < -15 && axisY < -15) {
+				direction = backwardright;
+				actuatorSpeed(-axisX, axisY + 15);
+			} else if (axisX > 15 && axisY < -15) {
+				direction = forwardright;
+				actuatorSpeed(axisX, axisY + 15);
+			} else if (axisX > 15) {
+				direction = forward;
+				actuatorSpeed(axisX, 0);
+		  } else if (axisX < -15) {
+				direction = backward;
+				actuatorSpeed(-axisX, 0);
+		  } else if (axisY > 15) {
+				direction = left;
+				actuatorSpeed2(0, axisY);
+		  } else if (axisY < -15) {
+				direction = right;
+				actuatorSpeed2(0, -axisY);
+		  } else {
+				direction = stall;
+				actuatorSpeed(0, 0);
+			}
 	}
 }
 osThreadDef(computeEngine, osPriorityNormal, 1, 0);
 
-    int main (void) {
+ int main (void) {
 	 
 	SysTick_Config(SystemCoreClock/1000); // 1 milisecond SysTick
 	

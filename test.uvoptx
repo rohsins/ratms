@@ -145,67 +145,77 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>whoAmI</ItemText>
+          <ItemText>axisX,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>1</WinNumber>
-          <ItemText>axisX,0x0A</ItemText>
+          <ItemText>axisY,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>2</count>
           <WinNumber>1</WinNumber>
-          <ItemText>axisY,0x0A</ItemText>
+          <ItemText>axisZ,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>3</count>
           <WinNumber>1</WinNumber>
-          <ItemText>axisZ,0x0A</ItemText>
+          <ItemText>axisXH,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>4</count>
           <WinNumber>1</WinNumber>
-          <ItemText>direction</ItemText>
+          <ItemText>axisYH,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>5</count>
           <WinNumber>1</WinNumber>
-          <ItemText>xGravity</ItemText>
+          <ItemText>axisZH,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>6</count>
           <WinNumber>1</WinNumber>
-          <ItemText>yGravity</ItemText>
+          <ItemText>speedL</ItemText>
         </Ww>
         <Ww>
           <count>7</count>
           <WinNumber>1</WinNumber>
-          <ItemText>zGravity</ItemText>
+          <ItemText>speedR</ItemText>
         </Ww>
         <Ww>
           <count>8</count>
           <WinNumber>1</WinNumber>
-          <ItemText>zFilteredValue</ItemText>
+          <ItemText>xAxisValue</ItemText>
         </Ww>
         <Ww>
           <count>9</count>
           <WinNumber>1</WinNumber>
-          <ItemText>i,0x0A</ItemText>
+          <ItemText>yAxisValue</ItemText>
         </Ww>
         <Ww>
           <count>10</count>
           <WinNumber>1</WinNumber>
-          <ItemText>\\test\ratms.cpp\zFilteredValue,0x0A</ItemText>
+          <ItemText>zAxisValue</ItemText>
         </Ww>
         <Ww>
           <count>11</count>
           <WinNumber>1</WinNumber>
-          <ItemText>\\test\ratms.cpp\axisZ,0x0A</ItemText>
+          <ItemText>trackme</ItemText>
         </Ww>
         <Ww>
           <count>12</count>
           <WinNumber>1</WinNumber>
-          <ItemText>zFilterValue</ItemText>
+          <ItemText>max</ItemText>
+        </Ww>
+        <Ww>
+          <count>13</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>min</ItemText>
+        </Ww>
+        <Ww>
+          <count>14</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>direction</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>
